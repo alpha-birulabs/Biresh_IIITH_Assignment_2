@@ -1,0 +1,84 @@
+{
+  "fusion_vs_speech": {
+    "angry": {
+      "gained": 0,
+      "lost": 0
+    },
+    "disgust": {
+      "gained": 0,
+      "lost": 0
+    },
+    "fear": {
+      "gained": 0,
+      "lost": 0
+    },
+    "happy": {
+      "gained": 1,
+      "lost": 0
+    },
+    "neutral": {
+      "gained": 0,
+      "lost": 0
+    },
+    "pleasant_surprise": {
+      "gained": 1,
+      "lost": 0
+    },
+    "sad": {
+      "gained": 0,
+      "lost": 0
+    }
+  },
+  "failure_cases": [
+    {
+      "id": "YAF_goal_ps",
+      "speaker": "YAF",
+      "transcript": "say the word goal",
+      "emotion": "pleasant_surprise",
+      "speech": "angry",
+      "text": "disgust",
+      "fusion": "happy",
+      "fusion_confidence": 0.800752
+    },
+    {
+      "id": "OAF_hall_ps",
+      "speaker": "OAF",
+      "transcript": "say the word hall",
+      "emotion": "pleasant_surprise",
+      "speech": "disgust",
+      "text": "fear",
+      "fusion": "disgust",
+      "fusion_confidence": 0.591943
+    },
+    {
+      "id": "OAF_hash_happy",
+      "speaker": "OAF",
+      "transcript": "say the word hash",
+      "emotion": "happy",
+      "speech": "pleasant_surprise",
+      "text": "fear",
+      "fusion": "happy",
+      "fusion_confidence": 0.992846
+    },
+    {
+      "id": "OAF_time_ps",
+      "speaker": "OAF",
+      "transcript": "say the word time",
+      "emotion": "pleasant_surprise",
+      "speech": "disgust",
+      "text": "angry",
+      "fusion": "pleasant_surprise",
+      "fusion_confidence": 0.987367
+    },
+    {
+      "id": "OAF_bite_angry",
+      "speaker": "OAF",
+      "transcript": "say the word bite",
+      "emotion": "angry",
+      "speech": "angry",
+      "text": "fear",
+      "fusion": "angry",
+      "fusion_confidence": 0.998834
+    }
+  ]
+}
