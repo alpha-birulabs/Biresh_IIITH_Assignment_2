@@ -2,7 +2,7 @@
 /Assignment 2a/
 /Assignment 2b.pdf
 /alignment/corpus/
-/alignment/extended.dict
+/alignment/*.dict
 /emotion/data/
 /emotion/checkpoints/*.tmp
 __pycache__/

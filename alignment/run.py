@@ -58,22 +58,37 @@ def prepare(source, corpus):
 
 
 def extend_dictionary(dictionary, additions, destination):
+    """Append pronunciations for missing words, keeping to the dictionary's phone inventory."""
     base = dictionary.read_text(encoding="utf-8").splitlines()
+    # The pronunciation is the last column. Probability columns may sit between it and the word.
     rows = [row.split("\t") for row in base if row.strip()]
-    if any(len(row) != 2 for row in rows):
-        raise ValueError("Use a plain two-column MFA dictionary with --lexicon-additions")
-    words = {word for word, _ in rows}
-    inventory = {phone for _, pronunciation in rows for phone in pronunciation.split()}
+    if any(len(row) < 2 for row in rows):
+        raise ValueError(f"Expected tab-separated word and pronunciation columns in {dictionary}")
+    words = {row[0] for row in rows}
+    inventory = {phone for row in rows for phone in row[-1].split()}
+    added = []
     for row in additions.read_text(encoding="utf-8").splitlines():
+        if not row.strip():
+            continue
         word, pronunciation = row.split("\t")
         unknown = set(pronunciation.split()) - inventory
         if unknown:
             raise ValueError(f"Unsupported phones for {word}: {sorted(unknown)}")
         if word not in words:
-            base.append(row)
+            added.append(row)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text("\n".join(base) + "\n", encoding="utf-8")
-    return str(destination)
+    destination.write_text("\n".join(base + added) + "\n", encoding="utf-8")
+    print(f"Added {len(added)} pronunciations to {destination}", flush=True)
+    return destination
+
+
+def pretrained_dictionary(name):
+    """Return the downloaded file behind a pretrained dictionary name."""
+    subprocess.run(["mfa", "model", "download", "dictionary", name], check=True)
+    path = Path(os.environ["MFA_ROOT_DIR"]) / "pretrained_models/dictionary" / f"{name}.dict"
+    if not path.is_file():
+        raise FileNotFoundError(f"MFA did not save {name} at {path}")
+    return path
 
 
 def main():
@@ -81,28 +96,45 @@ def main():
     parser.add_argument("--source", type=Path, default=ROOT / "Assignment 2a")
     parser.add_argument("--corpus", type=Path, default=ROOT / "alignment/corpus")
     parser.add_argument("--output", type=Path, default=ROOT / "alignment/TextGrids")
-    parser.add_argument("--dictionary", default=MODEL)
-    parser.add_argument("--lexicon-additions", type=Path)
+    parser.add_argument("--acoustic", default=MODEL, help="pretrained MFA acoustic model name")
+    parser.add_argument("--dictionary", help="dictionary name or file (default: same name as --acoustic)")
+    parser.add_argument("--lexicon-additions", type=Path, help="TSV of hand-written pronunciations to add")
+    parser.add_argument("--g2p", help="pretrained MFA G2P model that transcribes out-of-vocabulary words")
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--validate", action="store_true")
     args = parser.parse_args()
+    if args.lexicon_additions and args.g2p:
+        parser.error("Use either --lexicon-additions or --g2p")
     prepare(args.source, args.corpus)
     if args.prepare_only:
         return
     os.environ.setdefault("MFA_ROOT_DIR", str(ROOT / ".local/mfa-work"))
-    dictionary = args.dictionary
+    dictionary = args.dictionary or args.acoustic
+    extended = args.corpus.parent / f"{args.output.name}.extended.dict"
     if args.lexicon_additions:
-        dictionary = extend_dictionary(Path(dictionary), args.lexicon_additions, args.corpus.parent / "extended.dict")
-    for kind, model in [("dictionary", dictionary), ("acoustic", MODEL)]:
-        if model == MODEL:
-            subprocess.run(["mfa", "model", "download", kind, model], check=True)
+        dictionary = extend_dictionary(Path(dictionary), args.lexicon_additions, extended)
+    elif args.g2p:
+        base = Path(dictionary) if Path(dictionary).is_file() else pretrained_dictionary(dictionary)
+        subprocess.run(["mfa", "model", "download", "g2p", args.g2p], check=True)
+        generated = ROOT / f"alignment/pronunciations_g2p_{args.g2p}.tsv"
+        # One pronunciation per out-of-vocabulary word keeps the generated lexicon reviewable.
+        subprocess.run(
+            ["mfa", "g2p", str(args.corpus), args.g2p, str(generated), "--dictionary_path", str(base),
+             "--num_pronunciations", "1", "--clean", "-j", "2"],
+            check=True,
+        )
+        dictionary = extend_dictionary(base, generated, extended)
+    elif not Path(dictionary).is_file():
+        subprocess.run(["mfa", "model", "download", "dictionary", dictionary], check=True)
+    dictionary = str(dictionary)
+    subprocess.run(["mfa", "model", "download", "acoustic", args.acoustic], check=True)
     if args.validate:
         subprocess.run(
-            ["mfa", "validate", str(args.corpus), dictionary, MODEL, "--skip_acoustics", "--clean", "-j", "2"],
+            ["mfa", "validate", str(args.corpus), dictionary, args.acoustic, "--skip_acoustics", "--clean", "-j", "2"],
             check=True,
         )
     subprocess.run(
-        ["mfa", "align", str(args.corpus), dictionary, MODEL, str(args.output),
+        ["mfa", "align", str(args.corpus), dictionary, args.acoustic, str(args.output),
          "--clean", "--overwrite", "-j", "2"],
         check=True,
     )
