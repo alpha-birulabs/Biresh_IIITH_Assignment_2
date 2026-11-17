@@ -65,7 +65,8 @@ def mel_filterbank():
 MEL = mel_filterbank()
 
 
-def log_mel(path):
+def log_mel(path, snr_db=None, rng=None):
+    """Return log-Mel frames. `snr_db` adds white noise at that level, for robustness tests only."""
     samples, rate = sf.read(path, dtype="float32", always_2d=True)
     if samples.size == 0 or not np.isfinite(samples).all():
         raise ValueError(f"Empty or non-finite signal: {path}")
@@ -77,6 +78,9 @@ def log_mel(path):
     samples /= peak
     divisor = gcd(rate, RATE)
     samples = resample_poly(samples, RATE // divisor, rate // divisor)
+    if snr_db is not None:
+        noise = (rng or np.random.default_rng(0)).standard_normal(len(samples))
+        samples = samples + noise * np.sqrt(np.mean(samples ** 2) / 10 ** (snr_db / 10))
     # Use a short RMS envelope to trim quiet edges while preserving internal pauses.
     window = 320
     envelope = np.sqrt(np.mean(np.pad(samples, (0, -len(samples) % window)).reshape(-1, window) ** 2, axis=1))

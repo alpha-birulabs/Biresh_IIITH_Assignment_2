@@ -2,8 +2,10 @@
 
 Three classifiers predict the same seven emotions from speech, text, and speech plus text. The experiment uses [the assigned TESS Kaggle archive](https://www.kaggle.com/datasets/ejlok1/toronto-emotional-speech-set-tess).
 
-- [Experiment report](REPORT.md)
+- [Experiment report](REPORT.md): architecture decisions, comparison, analysis, failure cases and representation plots
 - [Accuracy and per-class results](Results/accuracy.md)
+- [Robustness study](Results/robustness.md): training seeds, text ablations and noisy audio
+- [Plots](Results/plots/): confusion matrices, learned representations, accuracy under noise
 
 ## Reproduce
 
@@ -19,9 +21,10 @@ python -m emotion.models.text_pipeline.test
 python -m emotion.models.fusion_pipeline.train
 python -m emotion.models.fusion_pipeline.test
 python -m emotion.summarize
+python -m emotion.robustness --source .local/tess
 ```
 
-Run all commands from the repository root. Training uses CUDA when available and otherwise runs on CPU. Each train/test entry point supports `--help`. Features are cached under `emotion/data/` and checkpoints under `emotion/checkpoints/`. Evaluation writes metrics and per-clip predictions to `emotion/Results/`. The summarizer writes accuracy tables, paired changes, failure cases, confusion matrices, and representation plots there.
+Run all commands from the repository root. Training uses CUDA when available and otherwise runs on CPU. Each train/test entry point supports `--help`. Features are cached under `emotion/data/` and checkpoints under `emotion/checkpoints/`. Evaluation writes metrics and per-clip predictions to `emotion/Results/`. The summarizer writes accuracy tables, paired changes, failure cases, silhouette scores, confusion matrices, and PCA and t-SNE plots of the learned representations there. The robustness study trains four more seeds of every model on the same split, re-evaluates the fusion models with the text replaced, and tests speech and fusion on audio with added white noise. Its extra checkpoints go to `.local/seed-study/`.
 
 ## Predict from new inputs
 
@@ -45,14 +48,6 @@ The archive contains two copies of the dataset. Preprocessing checks identical c
 
 We split by target word with seed 42, holding each word and all its recordings in one split. Training, validation, and test contain 1,960, 420, and 420 clips. Both speakers occur in each split. The experiment measures generalization to held-out words from these two speakers. Every held-out transcript occurs in all seven emotions in equal numbers, so a deterministic transcript-only classifier has 1/7 accuracy by construction. The dataset does not test whether text carries emotion in less constrained conversation. [Original TESS dataset description](https://doi.org/10.5683/SP2/E8H2MF)
 
-| Block | Implementation | Rationale |
-| --- | --- | --- |
-| Speech preprocessing | Mono 16 kHz audio, DC removal, peak scaling, RMS-based edge trimming | Standardizes sampling and removes long quiet edges while retaining internal pauses and relative dynamics. |
-| Speech features | 64 log-Mel bands from 25 ms frames and a 10 ms hop, standardized with training statistics | Models the spectral envelope and its evolution on a compact frequency scale. |
-| Speech temporal modelling | Bidirectional GRU with masked attention, using every fourth frame after feature extraction | Models changes in voice quality and timing over the utterance, with attention over valid frames only. |
-| Text preprocessing and features | Lowercase reconstructed transcript, character tokenization, learned 24-dimensional embeddings | Supports unseen target words without a fixed word vocabulary. |
-| Text contextual modelling | Bidirectional GRU and masked attention | Pools character context into an utterance representation. |
-| Fusion | Concatenate pooled speech and text vectors, project to 64 dimensions, normalize and apply GELU | Lets an end-to-end classifier learn the relative contribution of both modalities. |
-| Classifier | Dropout and a seven-logit linear head, trained with cross-entropy and AdamW | Uses a common prediction objective across modalities. Validation macro F1 selects the checkpoint. |
+The [report](REPORT.md#a-architecture-decisions) gives the architecture of every block and the reason for it.
 
-The paired comparison counts gains and losses on identical held-out clips. Each PCA panel is fitted independently to visualize one representation space. Overlapping text points are expected because every transcript has the same representation across its seven labels.
+The paired comparison counts gains and losses on identical held-out clips. Each PCA and t-SNE panel is fitted independently to visualize one representation space. The text panels show one point per transcript, because every transcript has the same representation across its seven labels.

@@ -13,7 +13,7 @@ import torch
 from emotion.data_prep import encode_text, log_mel
 from emotion.experiment import save_checkpoint, split_fingerprints
 from emotion.models.networks import EmotionClassifier
-from alignment.run import by_stem, normalize
+from alignment.run import by_stem, extend_dictionary, normalize
 
 
 class PipelineTests(unittest.TestCase):
@@ -88,6 +88,28 @@ class PipelineTests(unittest.TestCase):
             (root / "sample.TXT").write_text("words")
             (root / "ignored.csv").write_text("other")
             self.assertEqual(list(by_stem(root, ".txt")), ["sample"])
+
+    def test_dictionary_additions_keep_existing_words_and_the_phone_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            # Pretrained dictionaries may carry probability columns between the word and its phones.
+            (root / "base.dict").write_text("said\t0.99\t0.2\t1.0\t1.0\tS EH1 D\nbait\tB EY1 T\n", encoding="utf-8")
+            (root / "new.tsv").write_text("said\tS EY1 D\nbaited\tB EY1 T EH1 D\n", encoding="utf-8")
+            extended = extend_dictionary(root / "base.dict", root / "new.tsv", root / "out" / "extended.dict")
+            self.assertEqual(extended.read_text(encoding="utf-8").splitlines()[2:], ["baited\tB EY1 T EH1 D"])
+            (root / "new.tsv").write_text("zoo\tZ UW1\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Unsupported phones"):
+                extend_dictionary(root / "base.dict", root / "new.tsv", root / "out" / "extended.dict")
+
+    def test_added_noise_is_reproducible_and_leaves_clean_features_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "tone.wav"
+            sf.write(path, 0.5 * np.sin(np.arange(8000) * 0.1), 16000, subtype="FLOAT")
+            clean = log_mel(path)
+            np.testing.assert_array_equal(clean, log_mel(path))
+            noisy = log_mel(path, 10, np.random.default_rng(0))
+            np.testing.assert_array_equal(noisy, log_mel(path, 10, np.random.default_rng(0)))
+            self.assertGreater(noisy.mean(), clean.mean())
 
 
 if __name__ == "__main__":

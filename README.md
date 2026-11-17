@@ -1,15 +1,29 @@
 # IIIT Hyderabad LTRC Assignment 2
 
-- [Part 2a · Forced alignment with Montreal Forced Aligner](alignment/README.md)
-- [Part 2b · Speech, text, and multimodal emotion recognition](emotion/README.md)
+- [Part 2a · Forced alignment with Montreal Forced Aligner](alignment/README.md) · [PDF report](alignment/Alignment_Report.pdf)
+- [Part 2b · Speech, text, and multimodal emotion recognition](emotion/README.md) · [report](emotion/REPORT.md)
 
-Run commands from this directory. Use the supplied archive for the alignment recordings and the linked Kaggle archive for TESS.
+## Part 2a in brief
 
-The local implementation includes six MFA TextGrids, alignment inspection outputs and a PDF report, three trained emotion classifiers with train/test and prediction commands, and experiment results with plots and error analysis.
+The six supplied recordings are aligned three times: with the `english_mfa` acoustic model and its generic dictionary, with the same model and the US English dictionary, and with the `english_us_arpa` model and dictionary. Words missing from a dictionary are covered by hand-written entries in the first run and by pretrained G2P models in the other two. One command runs the alignments, the Praat checks, the comparison and the PDF report.
 
-Test accuracy on the shared 420-clip split is 99.05% for speech, 14.29% for text, and 99.52% for fusion. Target words are disjoint across splits, with both speakers present in each split.
+The repository holds 18 TextGrids with word and phone tiers, interval tables, and a word-by-word comparison of the runs. Comparing runs exposed three alignment errors: trailing silence absorbed by a final phone, a spoken word labelled as a pause, and compressed letter names in an initialism. The `english_us_arpa` run shows none of them.
 
-Two final-phone boundaries are flagged for manual listening in the alignment README.
+## Part 2b in brief
+
+Three classifiers predict seven emotions on TESS from speech, from text, and from both. They share one word-disjoint split with 420 held-out clips.
+
+| Model | Test accuracy | Macro F1 |
+| --- | ---: | ---: |
+| Speech only | 99.05% | 0.990 |
+| Text only | 14.29% | 0.108 |
+| Speech + text fusion | 99.52% | 0.995 |
+
+Every TESS transcript is spoken in all seven emotions, so text alone cannot beat uniform guessing (14.29%). Over five training seeds speech averages 99.43% and fusion 99.38%, so fusion does not add accuracy on this dataset. The report covers the architecture choices, the comparison, per-emotion results, failure cases, learned-representation plots, and a robustness study over training seeds, text ablations and noisy audio.
+
+## Run
+
+Run all commands from this directory. Each part's README lists its setup and commands. The supplied alignment recordings and the TESS archive are not redistributed here.
 
 Run the regression checks after installing the emotion dependencies.
 

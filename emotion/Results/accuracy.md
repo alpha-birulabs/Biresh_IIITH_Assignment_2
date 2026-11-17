@@ -33,3 +33,13 @@ Cases prioritize high-confidence fusion errors, followed by speech-only and text
 | OAF_hash_happy | happy | pleasant_surprise | fear | happy | 99.3% |
 | OAF_time_ps | pleasant_surprise | disgust | angry | pleasant_surprise | 98.7% |
 | OAF_bite_angry | angry | angry | fear | angry | 99.9% |
+
+## Separability of the learned representations
+
+The silhouette score compares each clip's distance to its own emotion with its distance to the nearest other emotion, in the full representation space. It ranges from -1 to 1 and is higher for tighter, better separated emotion clusters.
+
+| Representation | Dimensions | Silhouette score |
+| --- | ---: | ---: |
+| Speech temporal | 64 | 0.617 |
+| Text contextual | 32 | -0.017 |
+| Speech + text fusion | 64 | 0.758 |
