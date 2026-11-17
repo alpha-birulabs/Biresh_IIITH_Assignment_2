@@ -120,7 +120,7 @@ def main():
         # One pronunciation per out-of-vocabulary word keeps the generated lexicon reviewable.
         subprocess.run(
             ["mfa", "g2p", str(args.corpus), args.g2p, str(generated), "--dictionary_path", str(base),
-             "--num_pronunciations", "1", "--clean", "-j", "2"],
+             "--num_pronunciations", "1", "--sorted", "--clean", "-j", "2"],
             check=True,
         )
         dictionary = extend_dictionary(base, generated, extended)
