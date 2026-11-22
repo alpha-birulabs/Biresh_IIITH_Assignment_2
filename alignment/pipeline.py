@@ -7,7 +7,7 @@ import sys
 
 
 HERE = Path(__file__).resolve().parent
-# (TextGrid folder, results folder, extra arguments for run.py). Adjacent runs differ in one component.
+# TextGrid folder, results folder, and extra arguments for run.py.
 RUNS = [
     ("TextGrids", "Results", ["--lexicon-additions", str(HERE / "pronunciations.tsv")]),
     ("TextGrids_us_mfa", "Results/us_mfa", ["--dictionary", "english_us_mfa", "--g2p", "english_us_mfa"]),

@@ -5,6 +5,7 @@ Three classifiers predict the same seven emotions from speech, text, and speech 
 - [Experiment report](REPORT.md): architecture decisions, comparison, analysis, failure cases and representation plots
 - [Accuracy and per-class results](Results/accuracy.md)
 - [Robustness study](Results/robustness.md): training seeds, text ablations and noisy audio
+- [Matched baseline comparison](REPORT.md#matched-comparison-with-repo-inspired-models)
 - [Plots](Results/plots/): confusion matrices, learned representations, accuracy under noise
 
 ## Reproduce
@@ -22,9 +23,16 @@ python -m emotion.models.fusion_pipeline.train
 python -m emotion.models.fusion_pipeline.test
 python -m emotion.summarize
 python -m emotion.robustness --source .local/tess
+python -m emotion.cross_speaker
+python -m emotion.compare_baselines
+python -m emotion.compare_weighted_fusion
 ```
 
 Run all commands from the repository root. Training uses CUDA when available and otherwise runs on CPU. Each train/test entry point supports `--help`. Features are cached under `emotion/data/` and checkpoints under `emotion/checkpoints/`. Evaluation writes metrics and per-clip predictions to `emotion/Results/`. The summarizer writes accuracy tables, paired changes, failure cases, silhouette scores, confusion matrices, and PCA and t-SNE plots of the learned representations there. The robustness study trains four more seeds of every model on the same split, re-evaluates the fusion models with the text replaced, and tests speech and fusion on audio with added white noise. Its extra checkpoints go to `.local/seed-study/`.
+
+The baseline comparison uses those seed-study checkpoints and writes its own models to `.local/baseline-comparison/`. It uses the same cached TESS split for every variant.
+
+The weighted-fusion comparison also uses the seed-study checkpoints and trains the weighted variants in `.local/weighted-fusion/`.
 
 ## Predict from new inputs
 
@@ -49,5 +57,7 @@ The archive contains two copies of the dataset. Preprocessing checks identical c
 We split by target word with seed 42, holding each word and all its recordings in one split. Training, validation, and test contain 1,960, 420, and 420 clips. Both speakers occur in each split. The experiment measures generalization to held-out words from these two speakers. Every held-out transcript occurs in all seven emotions in equal numbers, so a deterministic transcript-only classifier has 1/7 accuracy by construction. The dataset does not test whether text carries emotion in less constrained conversation. [Original TESS dataset description](https://doi.org/10.5683/SP2/E8H2MF)
 
 The [report](REPORT.md#a-architecture-decisions) gives the architecture of every block and the reason for it.
+
+The cross-speaker experiment reuses the prepared word splits. Each direction trains on one speaker, selects checkpoints on that speaker's validation words, and evaluates the other speaker's held-out words. The [results by speaker and emotion](Results/cross_speaker.json) use 210 test clips per direction. The approach was inspired by a [TESS log-Mel CNN project](https://github.com/zubiiabbasi/speech-emotion-gradcam#12-cross-speaker-protocol-oaf-train-yaf-validation--test).
 
 The paired comparison counts gains and losses on identical held-out clips. Each PCA and t-SNE panel is fitted independently to visualize one representation space. The text panels show one point per transcript, because every transcript has the same representation across its seven labels.

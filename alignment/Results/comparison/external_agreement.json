@@ -1,0 +1,132 @@
+{
+  "KompallyNikshitha": {
+    "revision": "518e9084cfac363660a1764da82c10eeda1cab3a",
+    "clips": [
+      {
+        "clip": "F2BJRLP1",
+        "source": "https://raw.githubusercontent.com/KompallyNikshitha/Montreal-Forced-Aligner/518e9084cfac363660a1764da82c10eeda1cab3a/output/F2BJRLP1.TextGrid",
+        "local_words": 73,
+        "external_words": 68,
+        "matched_words": 66,
+        "long_phones": 2,
+        "unknown_phones": 2
+      },
+      {
+        "clip": "F2BJRLP2",
+        "source": "https://raw.githubusercontent.com/KompallyNikshitha/Montreal-Forced-Aligner/518e9084cfac363660a1764da82c10eeda1cab3a/output/F2BJRLP2.TextGrid",
+        "local_words": 74,
+        "external_words": 73,
+        "matched_words": 71,
+        "long_phones": 0,
+        "unknown_phones": 1
+      },
+      {
+        "clip": "F2BJRLP3",
+        "source": "https://raw.githubusercontent.com/KompallyNikshitha/Montreal-Forced-Aligner/518e9084cfac363660a1764da82c10eeda1cab3a/output/F2BJRLP3.TextGrid",
+        "local_words": 82,
+        "external_words": 82,
+        "matched_words": 80,
+        "long_phones": 0,
+        "unknown_phones": 2
+      },
+      {
+        "clip": "ISLE_SESS0131_BLOCKD02_01_sprt1",
+        "source": "https://raw.githubusercontent.com/KompallyNikshitha/Montreal-Forced-Aligner/518e9084cfac363660a1764da82c10eeda1cab3a/output/ISLE_SESS0131_BLOCKD02_01_sprt1.TextGrid",
+        "local_words": 5,
+        "external_words": 5,
+        "matched_words": 5,
+        "long_phones": 0,
+        "unknown_phones": 0
+      },
+      {
+        "clip": "ISLE_SESS0131_BLOCKD02_02_sprt1",
+        "source": "https://raw.githubusercontent.com/KompallyNikshitha/Montreal-Forced-Aligner/518e9084cfac363660a1764da82c10eeda1cab3a/output/ISLE_SESS0131_BLOCKD02_02_sprt1.TextGrid",
+        "local_words": 5,
+        "external_words": 5,
+        "matched_words": 5,
+        "long_phones": 0,
+        "unknown_phones": 0
+      },
+      {
+        "clip": "ISLE_SESS0131_BLOCKD02_03_sprt1",
+        "source": "https://raw.githubusercontent.com/KompallyNikshitha/Montreal-Forced-Aligner/518e9084cfac363660a1764da82c10eeda1cab3a/output/ISLE_SESS0131_BLOCKD02_03_sprt1.TextGrid",
+        "local_words": 5,
+        "external_words": 5,
+        "matched_words": 5,
+        "long_phones": 0,
+        "unknown_phones": 0
+      }
+    ],
+    "boundaries_compared": 464,
+    "median_shift_ms": 0.0,
+    "mean_shift_ms": 2.93,
+    "max_shift_ms": 130.0,
+    "within_20_ms": 450,
+    "within_50_ms": 460
+  },
+  "atharva753": {
+    "revision": "1f4b282327daf5e84067b6a55fe11165cc976ea9",
+    "clips": [
+      {
+        "clip": "F2BJRLP1",
+        "source": "https://raw.githubusercontent.com/atharva753/mfa-forced-alignment-pipeline/1f4b282327daf5e84067b6a55fe11165cc976ea9/mfa_output_english_arpa/F2BJRLP1.TextGrid",
+        "local_words": 73,
+        "external_words": 70,
+        "matched_words": 69,
+        "long_phones": 3,
+        "unknown_phones": 3
+      },
+      {
+        "clip": "F2BJRLP2",
+        "source": "https://raw.githubusercontent.com/atharva753/mfa-forced-alignment-pipeline/1f4b282327daf5e84067b6a55fe11165cc976ea9/mfa_output_english_arpa/F2BJRLP2.TextGrid",
+        "local_words": 74,
+        "external_words": 74,
+        "matched_words": 73,
+        "long_phones": 2,
+        "unknown_phones": 3
+      },
+      {
+        "clip": "F2BJRLP3",
+        "source": "https://raw.githubusercontent.com/atharva753/mfa-forced-alignment-pipeline/1f4b282327daf5e84067b6a55fe11165cc976ea9/mfa_output_english_arpa/F2BJRLP3.TextGrid",
+        "local_words": 82,
+        "external_words": 82,
+        "matched_words": 82,
+        "long_phones": 0,
+        "unknown_phones": 0
+      },
+      {
+        "clip": "ISLE_SESS0131_BLOCKD02_01_sprt1",
+        "source": "https://raw.githubusercontent.com/atharva753/mfa-forced-alignment-pipeline/1f4b282327daf5e84067b6a55fe11165cc976ea9/mfa_output_english_arpa/ISLE_SESS0131_BLOCKD02_01_sprt1.TextGrid",
+        "local_words": 5,
+        "external_words": 5,
+        "matched_words": 5,
+        "long_phones": 0,
+        "unknown_phones": 0
+      },
+      {
+        "clip": "ISLE_SESS0131_BLOCKD02_02_sprt1",
+        "source": "https://raw.githubusercontent.com/atharva753/mfa-forced-alignment-pipeline/1f4b282327daf5e84067b6a55fe11165cc976ea9/mfa_output_english_arpa/ISLE_SESS0131_BLOCKD02_02_sprt1.TextGrid",
+        "local_words": 5,
+        "external_words": 5,
+        "matched_words": 5,
+        "long_phones": 0,
+        "unknown_phones": 0
+      },
+      {
+        "clip": "ISLE_SESS0131_BLOCKD02_03_sprt1",
+        "source": "https://raw.githubusercontent.com/atharva753/mfa-forced-alignment-pipeline/1f4b282327daf5e84067b6a55fe11165cc976ea9/mfa_output_english_arpa/ISLE_SESS0131_BLOCKD02_03_sprt1.TextGrid",
+        "local_words": 5,
+        "external_words": 5,
+        "matched_words": 5,
+        "long_phones": 0,
+        "unknown_phones": 0
+      }
+    ],
+    "boundaries_compared": 478,
+    "median_shift_ms": 0.0,
+    "mean_shift_ms": 1.13,
+    "max_shift_ms": 130.0,
+    "within_20_ms": 475,
+    "within_50_ms": 477
+  }
+}

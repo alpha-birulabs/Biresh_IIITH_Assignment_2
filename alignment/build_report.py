@@ -81,8 +81,8 @@ def build(results, destination):
             f"Montreal Forced Aligner 3.3.10 aligned the six supplied recordings from two speakers ({seconds:.3f} seconds, "
             f"{words} word tokens). One script converts the audio to 16 kHz mono PCM, pairs each WAV with a normalized "
             "transcript, validates dictionary coverage, runs the aligner and checks the exported TextGrids. "
-            "The corpus was aligned three times so that the effect of the dictionary and of the acoustic model can be "
-            "read separately: adjacent runs differ in one component.", body),
+            "The two IPA runs hold the acoustic model fixed and change the dictionary. The ARPAbet run uses a "
+            "different acoustic model and its matching dictionary.", body),
         Paragraph("Models and dictionaries", heading),
         table([["Run", "Acoustic model", "Dictionary", "Out-of-vocabulary words"]]
               + [[name, acoustic, Paragraph(dictionary, cell), Paragraph(missing, cell)]
@@ -112,7 +112,7 @@ def build(results, destination):
             "next pages.", body),
         table([["Runs compared", "What changes", "Speaker", "Count", "Median ms", "Mean ms", "≤ 20 ms", "≤ 50 ms", "Max ms"]]
               + [[f"{first} / {second}", change, label, *shift(first, second, speaker)]
-                 for first, second, change in (("mfa_generic", "mfa_us", "dictionary"), ("mfa_us", "arpa_us", "acoustic model"))
+                 for first, second, change in (("mfa_generic", "mfa_us", "dictionary"), ("mfa_us", "arpa_us", "model + dict."))
                  for speaker, label in (("F2BJ", "F2BJ"), ("SESS0131", "ISLE"))],
               [3.6 * cm, 2.6 * cm, 1.8 * cm, 1.5 * cm, 1.7 * cm, 1.6 * cm, 1.5 * cm, 1.5 * cm, 1.2 * cm + 0.5 * cm], align_from=3),
         PageBreak(),
@@ -121,10 +121,15 @@ def build(results, destination):
         Paragraph(
             "With the english_mfa acoustic model the final /t/ of <i>bait</i> runs from 2.050 s to the end of the file at "
             "4.125 s, and in clip 03 the final /d/ of <i>bed</i> runs from 1.790 s to 4.500 s. The spectrogram shows a "
-            "release near 2.2 s and then a quiet tail. Changing the dictionary does not help (mfa_us is identical here), "
-            "so the cause is the acoustic model, not the pronunciation. english_us_arpa ends <i>bait</i> at 2.250 s and "
+            "release near 2.2 s and then a quiet tail. Both IPA dictionaries produce the same long tails. "
+            "The ARPAbet model and dictionary end <i>bait</i> at 2.250 s and "
             "<i>bed</i> at 2.060 s, labels the tail as silence, and also inserts a pause between <i>white</i> and "
             "<i>not</i>. No arpa_us phone is longer than 0.5 s. Clip 02 ends in a vowel and all three runs agree on it.", body),
+        Paragraph(
+            "<b>Listening check.</b> In clip 01, one listener heard <i>white, not bait</i> and the other heard "
+            "<i>wait, not bait</i> and found the voice unclear. The first listener heard <i>bait</i> end before "
+            "3 s. In clip 03, both heard <i>bad, not bed</i>. One found it clear and the other heard <i>bed</i> end "
+            "before 3 s. These estimates support the presence of quiet tails and leave the exact endpoints unverified.", body),
         Paragraph(
             "The same figure shows how the phone sets differ. The generic dictionary gives <i>white</i> as ʋ aj ʈ and "
             "<i>said</i> as s aj d, its only entries for those words, where the US dictionaries give w aj t and s ɛ d. "
@@ -135,7 +140,7 @@ def build(results, destination):
         Image(str(results / "comparison/F2BJRLP1_19.2-21.5s.png"), width=17 * cm, height=17 * cm * 0.7),
         Paragraph(
             "The transcript reads “… one of the toughest. As W B U R’s Margo Melnicove reports …”. In mfa_generic, "
-            "<i>toughest</i> has the vowel-less entry ʈ ə f s ʈ and ends at 19.68 s; the aligner then places <i>as</i> on "
+            "the entry ʈ ə f s ʈ gives <i>toughest</i> one vowel. The aligner ends the word at 19.68 s, places <i>as</i> on "
             "the rest of that word (19.68–19.92 s) and marks 19.92–20.58 s as a pause. The signal contradicts this: "
             "the level between 20.40 and 20.55 s is −29 to −31 dBFS, the same as the average of the whole recording "
             "(−29 dBFS), while 19.95–20.35 s is more than 10 dB quieter. The spoken <i>as</i> was skipped. Both US "
@@ -145,18 +150,23 @@ def build(results, destination):
             "as a single ɐ, so the missing syllables of “double-u” are pushed into the next letter and the vowel of "
             "<i>b</i> is stretched to 390 ms. With full letter names in the US dictionaries the four letters receive "
             "plausible durations, and the two acoustic models agree on them within 20 ms.", body),
+        Paragraph(
+            "<b>Listening check.</b> The listener heard a pause after <i>toughest</i>, a distinct <i>as</i>, "
+            "and all four letters in <i>WBUR</i>, with <i>B</i> and <i>U</i> sounding a little alike. "
+            "The pause after <i>toughest</i> sounded longer than the one after <i>reports</i>. The ARPAbet "
+            "word tiers show gaps of about 0.38 s and 0.06 s, respectively. The supplied transcript has a "
+            "period after <i>toughest</i> and a comma after <i>reports</i>.", body),
         Paragraph("Summary", heading),
         Paragraph(
             "• Word and phone tiers are consistent in every run: each word interval is covered exactly by its phones, "
             "and pauses appear as empty intervals in both tiers.<br/>"
-            "• Dictionary quality mattered more than the acoustic model for the long recordings. A single mismatched "
-            "entry displaced two neighbouring words by up to 0.67 s.<br/>"
-            "• The acoustic model mattered for utterance-final silence in the short ISLE clips, which are recordings "
-            "of a non-native speaker with long quiet tails.<br/>"
+            "• Changing the IPA dictionary shifted neighbouring word boundaries by up to 0.67 s and corrected "
+            "the placement of <i>as</i>.<br/>"
+            "• The ARPAbet model and dictionary separated the quiet tails from the final phones in the ISLE clips.<br/>"
             "• arpa_us is the run recommended for further use: no unknown phones, no phone over 0.5 s, and no "
             "disagreement with the signal in the places examined.<br/>"
-            "• Remaining limits: there are no reference boundaries, the checks above are acoustic and visual, and "
-            "listening in Praat is still needed before any boundary is treated as ground truth.", body),
+            "• The listening checks cover selected passages and give approximate evidence. The corpus has no "
+            "manually annotated reference boundaries.", body),
         Paragraph("Scripts, TextGrids and tables: alignment/ in the repository. Models: "
                   "<a href='https://mfa-models.readthedocs.io/' color='#1f5fa8'>MFA model documentation</a>.", small),
     ]

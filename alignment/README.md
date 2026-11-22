@@ -1,6 +1,6 @@
 # Part 2a · Montreal Forced Aligner
 
-The six supplied recordings (two speakers, 97.2 seconds, 244 word tokens) are aligned with Montreal Forced Aligner 3.3.10. One script prepares the corpus, validates dictionary coverage, runs the aligner and checks the TextGrids. The corpus is aligned three times, so the effect of the dictionary and of the acoustic model can be read separately.
+The six supplied recordings (two speakers, 97.2 seconds, 244 word tokens) are aligned with Montreal Forced Aligner 3.3.10. One script prepares the corpus, validates dictionary coverage, runs the aligner and checks the TextGrids. The two IPA runs hold the acoustic model fixed to show the effect of changing dictionaries. The ARPAbet run uses a different acoustic model and its matching dictionary.
 
 | Run | Acoustic model | Dictionary | Out-of-vocabulary words | TextGrids |
 | --- | --- | --- | --- | --- |
@@ -12,7 +12,32 @@ The six supplied recordings (two speakers, 97.2 seconds, 244 word tokens) are al
 - [Word-boundary agreement between the runs](Results/comparison/summary.md) and the [per-word table](Results/comparison/word_boundaries.csv)
 - Interval tables and Praat checks per run: [mfa_generic](Results/), [mfa_us](Results/us_mfa/), [arpa_us](Results/us_arpa/)
 
-`arpa_us` is the run recommended for further use. It has no unknown phones, no phone longer than 0.5 seconds, and no disagreement with the signal in the places examined below.
+The final TextGrids are the six files in [TextGrids_us_arpa](TextGrids_us_arpa/). The other runs document the comparisons on the same six recordings.
+
+| Check | Global English + generic dictionary | Global English + US IPA dictionary | US ARPAbet model and dictionary |
+| --- | ---: | ---: | ---: |
+| TextGrids that passed structural checks | 6 / 6 | 6 / 6 | 6 / 6 |
+| Unknown phone intervals after dictionary additions | 0 | 0 | 0 |
+| Phones longer than 0.5 s | 2 | 2 | 0 |
+| End of *bait* in clip 01 | 4.125 s | 4.125 s | 2.250 s |
+| End of *bed* in clip 03 | 4.500 s | 4.500 s | 2.060 s |
+| *As* in F2BJRLP1 | 19.68–19.92 s | 20.35–20.57 s | 20.36–20.56 s |
+
+The ARPAbet pair separates both quiet tails from the final consonants and places *as* after the audible pause. The listening review supports these local improvements. The dataset has no manually timed references for measuring boundary accuracy across the corpus.
+
+### Comparison with public outputs on the same recordings
+
+The published TextGrids from two other implementations cover the same six clips. The comparison pairs word labels in transcript order and calculates start and end differences for matched labels.
+
+| Output | Labelled words | Unknown phone intervals | Phones longer than 0.5 s | Matched boundaries within 20 ms of ours |
+| --- | ---: | ---: | ---: | ---: |
+| Our ARPAbet run | 244 | 0 | 0 | Reference for this comparison |
+| KompallyNikshitha | 238 | 5 | 2 | 450 / 464 |
+| atharva753 | 241 | 6 | 5 | 475 / 478 |
+
+The median shift is 0 ms in both comparisons. Our grids have fewer unknown and unusually long intervals, which supports selecting them for submission. Tokenisation differences leave some labels unmatched, and the boundary agreement measures only the matched subset. The [per-recording results](Results/comparison/external_agreement.json) record the exact source revisions. [KompallyNikshitha TextGrids](https://github.com/KompallyNikshitha/Montreal-Forced-Aligner/tree/518e9084cfac363660a1764da82c10eeda1cab3a/output) · [atharva753 TextGrids](https://github.com/atharva753/mfa-forced-alignment-pipeline/tree/1f4b282327daf5e84067b6a55fe11165cc976ea9/mfa_output_english_arpa)
+
+Reproduce this comparison with `python alignment/compare_external.py`. The script downloads the published TextGrids into a temporary directory.
 
 ## Setup
 
@@ -70,25 +95,37 @@ The words tier and the phones tier are consistent in every run. Each word interv
 | --- | --- | --- | ---: | ---: | ---: | ---: |
 | `mfa_generic` / `mfa_us` | dictionary | F2BJ | 0 ms | 90% | 95% | 670 ms |
 | `mfa_generic` / `mfa_us` | dictionary | ISLE | 0 ms | 93% | 100% | 50 ms |
-| `mfa_us` / `arpa_us` | acoustic model | F2BJ | 0 ms | 94% | 98% | 250 ms |
-| `mfa_us` / `arpa_us` | acoustic model | ISLE | 15 ms | 63% | 70% | 2440 ms |
+| `mfa_us` / `arpa_us` | model and dictionary | F2BJ | 0 ms | 94% | 98% | 250 ms |
+| `mfa_us` / `arpa_us` | model and dictionary | ISLE | 15 ms | 63% | 70% | 2440 ms |
 
 A shift is the absolute difference between two runs for the same word start or end. The data have no hand-labelled boundaries, so these numbers measure disagreement and not accuracy. The large shifts come from three specific errors.
 
-**Trailing silence absorbed by the last phone.** With the `english_mfa` acoustic model, the final /t/ of *bait* in ISLE clip 01 runs from 2.050 s to the end of the file at 4.125 s, and the final /d/ of *bed* in clip 03 runs from 1.790 s to 4.500 s. Changing the dictionary does not help, so the cause is the acoustic model. `english_us_arpa` ends the words at 2.250 s and 2.060 s and labels the tail as silence.
+**Trailing silence absorbed by the last phone.** With the `english_mfa` acoustic model, the final /t/ of *bait* in ISLE clip 01 runs from 2.050 s to the end of the file at 4.125 s, and the final /d/ of *bed* in clip 03 runs from 1.790 s to 4.500 s. Both IPA dictionaries produced the same long tails. The `english_us_arpa` model and dictionary end the words at 2.250 s and 2.060 s and label the tail as silence. The comparison changes both the acoustic model and the dictionary because the phone inventories differ.
 
 ![Three runs on ISLE clip 01](Results/comparison/ISLE_SESS0131_BLOCKD02_01_sprt1.png)
 
-**A spoken word labelled as a pause.** In `F2BJRLP1` the transcript reads “… one of the toughest. As W B U R’s Margo Melnicove reports …”. The generic dictionary has the vowel-less entry `ʈ ə f s ʈ` for *toughest*. The aligner ends that word early, places *as* on the rest of it (19.68–19.92 s), and marks 19.92–20.58 s as a pause. The signal level at 20.40–20.55 s is −29 to −31 dBFS, the same as the average of the whole recording, so the spoken *as* was skipped. Both US dictionaries place *as* at 20.35–20.57 s.
+**A spoken word labelled as a pause.** In `F2BJRLP1` the transcript reads “… one of the toughest. As W B U R’s Margo Melnicove reports …”. The generic dictionary entry `ʈ ə f s ʈ` gives *toughest* one vowel. The aligner ends that word early, places *as* on the rest of it (19.68–19.92 s), and marks 19.92–20.58 s as a pause. The signal level at 20.40–20.55 s is −29 to −31 dBFS, the same as the average of the whole recording, so the spoken *as* was skipped. Both US dictionaries place *as* at 20.35–20.57 s.
 
 ![Three runs on F2BJRLP1, 19.2 to 21.5 seconds](Results/comparison/F2BJRLP1_19.2-21.5s.png)
 
 **Letter names compressed.** The generic dictionary has *w* as `d ɐ b` and *u* as a single `ɐ`. The missing syllables of “double-u” are pushed into the next letter, and the vowel of *b* is stretched to 390 ms. With full letter names in the US dictionaries, the two acoustic models agree on all four letters within 20 ms.
 
-Dictionary quality mattered more than the acoustic model for the long recordings. The acoustic model mattered for utterance-final silence in the short ISLE clips, which are recordings of a non-native speaker with long quiet tails.
+Changing only the dictionary corrected the largest mismatch in the long recordings. The ARPAbet pairing addressed the utterance-final silence in the short ISLE clips.
+
+The MFA motor speech tutorial shows how to compare pronunciation variants with the acoustic model held fixed and inspect the resulting phone boundaries in Praat. That design fits the two IPA runs. The original MFA paper compares against human annotations, which would be needed to turn the current agreement statistics into a boundary-accuracy estimate. A few generated entries such as *Dukakis* and *Melnicove* remain pronunciation hypotheses even when dictionary coverage is complete. [MFA tutorial, Case 3](https://github.com/thealk/MFA-Motor-Speech-Tutorial#case-3-toggling-pronunciation-variants-and-weights-to-improve-identification-of-non-native-speech-sequences) · [Original MFA paper](https://people.linguistics.mcgill.ca/~morgan/mcauliffeEtAl2017_mfa.pdf) · [MFA G2P guidance](https://montreal-forced-aligner.readthedocs.io/en/stable/first_steps/index.html#generating-a-pronunciation-dictionary-with-a-pretrained-g2p-model)
+
+## Listening review
+
+| Recording | Listener observations |
+| --- | --- |
+| ISLE clip 01 | One listener heard “I said white, not bait” and heard *bait* end before 3 s. The other heard “I said wait, not bait” and found the voice unclear. The supplied transcript says *white*. |
+| ISLE clip 03 | Both listeners heard “I said bad, not bed.” One found the voice clear and the other heard *bed* end before 3 s. |
+| F2BJRLP1 | One listener heard a pause after *toughest*, then a distinct *as* and all four letters of *WBUR*. *B* and *U* sounded a little alike. The listener heard a longer pause after *toughest* than after *reports*. The ARPAbet word intervals show gaps of about 0.38 s and 0.06 s, respectively. The supplied transcript has a period after *toughest* and a comma after *reports*. |
+
+The listening estimates for clips 01 and 03 support the presence of quiet tails. Exact phone endpoints remain unverified.
 
 ## Inspection in Praat
 
-Open a WAV from `alignment/corpus/` and the TextGrid with the same name in [Praat](https://www.fon.hum.uva.nl/praat/), select both objects, and choose **View & Edit**. Listen around a narrow window before judging an apparent offset. The observations above rest on the spectrogram, the signal level and the agreement between runs. Listening is still needed before any boundary is treated as ground truth.
+Open a WAV from `alignment/corpus/` and the TextGrid with the same name in [Praat](https://www.fon.hum.uva.nl/praat/), select both objects, and choose **View & Edit**. Listen around a narrow window before judging an apparent offset. The observations above combine listening with spectrograms, signal levels, and comparisons between runs. The recordings have no manually annotated reference boundaries.
 
 [MFA installation guide](https://montreal-forced-aligner.readthedocs.io/en/stable/installation.html) · [MFA pretrained models](https://mfa-models.readthedocs.io/)

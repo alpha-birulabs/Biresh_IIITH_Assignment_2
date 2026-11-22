@@ -126,7 +126,7 @@ def load_model(mode, path, device):
         raise ValueError(f"Checkpoint modality does not match {mode}")
     if tuple(checkpoint.get("emotions", EMOTIONS)) != EMOTIONS:
         raise ValueError("Checkpoint emotion ordering does not match this implementation")
-    model = EmotionClassifier(mode).to(device)
+    model = EmotionClassifier(mode, checkpoint.get("fusion_style", "concat")).to(device)
     model.load_state_dict(checkpoint["weights"])
     model.eval()
     return model, checkpoint
@@ -139,7 +139,8 @@ def train(mode, args, device):
     stats = None
     if training.frames is not None:
         stats = (training.frames.mean(dim=0).to(device), training.frames.std(dim=0).clamp_min(1e-5).to(device))
-    model = EmotionClassifier(mode).to(device)
+    fusion_style = getattr(args, "fusion_style", "concat")
+    model = EmotionClassifier(mode, fusion_style).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.002)
     criterion = nn.CrossEntropyLoss()
     best_score = -1
@@ -165,7 +166,7 @@ def train(mode, args, device):
             best_score = score
             stale = 0
             save_checkpoint(
-                {"weights": model.state_dict(), "stats": stats, "epoch": epoch, "mode": mode,
+                {"weights": model.state_dict(), "stats": stats, "epoch": epoch, "mode": mode, "fusion_style": fusion_style,
                  "emotions": list(EMOTIONS), "seed": args.seed, "data_fingerprints": fingerprints,
                  "settings": {"batch_size": args.batch_size, "epochs": args.epochs, "patience": args.patience,
                               "learning_rate": 0.002, "device": str(device), "torch_version": str(torch.__version__)}},

@@ -29,9 +29,9 @@ The split is by target word with seed 42: 140 words for training, 30 for validat
 | Fusion | Concatenate the 64-dimensional speech vector and the 32-dimensional text vector, then Linear 96→64 with LayerNorm and GELU. Both encoders are trained jointly with the fusion layer. | Late fusion of pooled vectors suits two streams with different lengths and rates. A learned projection lets training decide how much weight each modality gets. Joint training lets the acoustic encoder adapt to the presence of text. |
 | Classifier | Dropout 0.2 and a linear layer to seven logits, trained with cross-entropy | The same head on every model keeps the comparison about the representation and not about the classifier. |
 
-The models have 19,480 (speech), 5,040 (text) and 30,625 (fusion) parameters. Training uses AdamW with learning rate 0.002, batch size 64, gradient clipping at norm 5 and at most 30 epochs. The checkpoint with the best validation macro F1 is kept, and training stops after eight epochs without improvement. The test set is used once, after model selection.
+The models have 19,480 (speech), 5,040 (text) and 30,625 (fusion) parameters. Training uses AdamW with learning rate 0.002, batch size 64, gradient clipping at norm 5 and at most 30 epochs. The checkpoint with the best validation macro F1 is kept, and training stops after eight epochs without improvement. Test metrics are computed after checkpoint selection.
 
-We chose small models trained from scratch over pretrained encoders such as wav2vec 2.0 or BERT. A 19k-parameter speech model already reaches 99% on held-out words, so a larger encoder has almost nothing left to gain on this dataset, and it would make the three-way comparison harder to read.
+The small models make it practical to compare modalities across several runs. Other TESS projects use MFCCs with a BiGRU and combine class scores with an MLP, or use CNN–BiLSTM attention with frozen DistilBERT and concatenate the learned representations. A pretrained language encoder would still receive the same transcript for every emotion. The character encoder gives this experiment a compact text baseline, and the joint fusion model lets us examine its learned representation and measure what changes when the transcript is replaced. [MFCC and score fusion project](https://github.com/pranav-suresh13/Speech-Emotion-Recognition) · [CNN–BiLSTM and DistilBERT project](https://github.com/savioshaju/Multimodal-Emotion-Recognition)
 
 ## B. Experiments
 
@@ -68,7 +68,7 @@ A gain of two clips is small, so every model was trained again with four more se
 | 4 | 99.76% | 14.29% | 99.52% | 0 | 1 |
 | Mean ± SD | 99.43% ± 0.27% | 14.29% ± 0.00% | 99.38% ± 0.21% | 0.8 | 1.0 |
 
-Fusion is ahead in two seeds and behind in three. On average the two models are equal, and the difference in the released checkpoints is training noise. Text scores exactly 14.29% in every seed, as the protocol predicts.
+Fusion is ahead in two seeds and behind in three. The gap between the released checkpoints is within the variation across seeds. Text scores exactly 14.29% in every seed, as the protocol predicts.
 
 ## C. Analysis
 
@@ -145,9 +145,52 @@ The plots show the 420 held-out clips in the space each model classifies from: t
 
 **Fusion block.** The clusters are tighter and further apart than in the speech model, and the silhouette score rises from 0.617 to 0.758. Angry and happy overlap on the first two principal components but are fully separate in t-SNE and in the classifier, which uses all 64 dimensions. The speaker sub-clusters are weaker: the same k-means split recovers the speaker for only 57% to 87% of the clips per emotion. The fusion representation is organised more by emotion and less by speaker than the speech representation.
 
+## Cross-speaker evaluation
+
+A TESS log-Mel CNN project tests across speakers but uses the same held-out speaker's clips for checkpoint selection and evaluation. Here each model trains on 140 words and selects its checkpoint on 30 different words from the training speaker. The other speaker supplies 210 test clips from the final 30 words. Both directions use seed 42 and the same settings as the main experiment. [TESS CNN experiment](https://github.com/zubiiabbasi/speech-emotion-gradcam) · [Results and per-emotion recall](Results/cross_speaker.json)
+
+| Training speaker → test speaker | Speech | Text | Fusion |
+| --- | ---: | ---: | ---: |
+| OAF → YAF | 39.52% | 14.29% | 40.48% |
+| YAF → OAF | 37.62% | 14.29% | 21.90% |
+
+Fusion gets two more clips right in the first direction and 33 fewer in the reverse direction. Both acoustic models miss every happy clip in both directions. Sadness has 100% recall on YAF and 0% on OAF, while disgust has 100% recall on OAF and at most 10% on YAF. The speaker swap exposes errors hidden by the same-speaker test. This experiment also halves the training set to 980 clips per direction, and results come from one seed and two speakers.
+
+## Matched comparison with repo-inspired models
+
+All variants use the original 1,960 training, 420 validation and 420 test clips. The repo-inspired speech variant uses 40 cepstral coefficients from a DCT of the same log-Mel frames. It keeps the BiGRU, attention, optimizer and validation-based checkpoint selection. The repo-inspired text variant fits word TF-IDF and logistic regression on the training clips. The score-fusion MLP fits the unimodal probabilities on validation clips and receives only probabilities at evaluation. The two score-fusion variants use log-Mel or cepstral speech predictions, respectively. This tests the architectural choices under our protocol. [Repository describing MFCC, TF-IDF and score fusion](https://github.com/pranav-suresh13/Speech-Emotion-Recognition)
+
+| Variant | Mean accuracy ± SD | Mean macro F1 |
+| --- | ---: | ---: |
+| **Log-Mel + BiGRU (submitted speech)** | **99.43% ± 0.27 pp** | **0.9943** |
+| MFCC-style features + BiGRU | 99.48% ± 0.31 pp | 0.9947 |
+| **Character BiGRU (submitted text)** | **14.29% ± 0.00 pp** | **0.1143** |
+| TF-IDF + logistic regression | 14.29% ± 0.00 pp | 0.0357 |
+| **Representation fusion (submitted multimodal)** | **99.38% ± 0.21 pp** | **0.9938** |
+| Log-Mel speech + TF-IDF score fusion | 99.43% ± 0.13 pp | 0.9943 |
+| MFCC-style speech + TF-IDF score fusion | 99.43% ± 0.40 pp | 0.9943 |
+
+Each row summarizes five runs on the same 420 clips. The MFCC-style branch gains 0.05 percentage points on average, equivalent to one additional correct prediction summed across five runs. The speech comparison favors it in two seeds, ties in two, and favors log-Mel in one. Text accuracy ties, while the character model has higher macro F1 and supplies the contextual representation required for the plots. Both score-fusion variants gain 0.05 percentage points over representation fusion. The joint model gives a learned fusion representation for the required analysis and already has matched text-ablation and cross-speaker results. These small gaps support retaining the three existing pipelines. [Per-seed results](Results/baseline_comparison.json)
+
+### Learned weights versus concatenation
+
+The weighted variant tests a fusion idea from a TESS repository that uses Wav2Vec 2.0 and RoBERTa. Our comparison keeps the original speech and text encoders and changes the fusion block. The weighted block projects the text vector to the speech vector's size, learns a softmax weight for each modality, and projects their weighted sum before classification. The models have 30,625 and 30,883 parameters, respectively. Both use the same split, training settings and five initialization seeds. [Weighted-fusion reference](https://github.com/indrasn0wal/Multimodal-Emotion-Recognition#3-fusion-block---4-variants-compared)
+
+| Seed | Concatenation correct / 420 | Weighted fusion correct / 420 |
+| ---: | ---: | ---: |
+| 42 | 418 | 417 |
+| 1 | 416 | 419 |
+| 2 | 418 | 416 |
+| 3 | 417 | 417 |
+| 4 | 418 | 417 |
+| Mean accuracy ± SD | **99.38% ± 0.21 pp** | **99.33% ± 0.26 pp** |
+| Mean macro F1 | **0.9938** | **0.9933** |
+
+Weighted fusion fixes seven concatenation errors and introduces eight across the five runs. Concatenation wins three seeds, loses one and ties one. Its average advantage is one correct prediction summed over five evaluations of the same 420 clips. These results support keeping the submitted concatenation model. [Paired results](Results/weighted_fusion.json)
+
 ## Limits of this study
 
-- TESS has two speakers and both are in every split. The results describe new words from known speakers, not new speakers.
+- TESS has two speakers. The main results measure new words from known speakers. The cross-speaker experiment measures transfer between these two particular voices.
 - The speech is acted and recorded in a studio with one carrier phrase. Accuracy near 99% is a property of this dataset and does not transfer to spontaneous speech.
 - The test set has 420 clips and the models make two to four errors. Differences of one or two clips are within the variation between training seeds.
 - The text result is a consequence of the dataset design. It does not show that text is uninformative for emotion in general.
